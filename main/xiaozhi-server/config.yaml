@@ -35,6 +35,11 @@ server:
     # 如果属于白名单内的设备，不校验token，直接放行
     allowed_devices:
       - "11:22:33:44:55:66"
+    # [Eddie fork] 单模块 OTA 是否只给 allowed_devices 下发 websocket/MQTT 凭证。
+    # false/缺省：保持上游行为（auth.enabled 时，任意能访问 OTA 的设备都能拿到可用 token）。
+    # true：OTA POST 对不在白名单的设备返回 HTTP 403，不签发 token / MQTT 密码。
+    # 生效后请在运行时 data/.config.yaml 里设为 true（不要把真实设备 ID 提交到仓库）。
+    restrict_ota_to_allowed_devices: false
  # MQTT网关配置，用于通过OTA下发到设备，根据mqtt_gateway的.env文件配置，格式为host:port
   mqtt_gateway: null
   # MQTT签名密钥，用于生成MQTT连接密码，根据mqtt_gateway的.env文件配置

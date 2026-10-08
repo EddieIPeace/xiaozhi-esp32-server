@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+    # Eddie fork: keep the full upstream suite on main only.
+    # PRs into eddie run .github/workflows/eddie-server-deploy.yml instead.
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

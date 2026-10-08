@@ -12,6 +12,11 @@ from aiohttp import web
 from core.auth import AuthManager
 from core.utils.util import get_local_ip, get_vision_url
 from core.api.base_handler import BaseHandler
+# Eddie-fork: opt-in OTA allowlist (absent = upstream). See ota_allowlist.py.
+from core.api.ota_allowlist import (
+    should_refuse_unknown_ota_device,
+    unknown_device_ota_payload,
+)
 
 TAG = __name__
 
@@ -166,6 +171,21 @@ class OTAHandler(BaseHandler):
                 self.logger.bind(tag=TAG).info(f"OTA请求ClientID: {client_id}")
             else:
                 raise Exception("OTA请求ClientID为空")
+
+            # Eddie-fork: when server.auth.restrict_ota_to_allowed_devices is
+            # true, do not mint websocket tokens or MQTT passwords for devices
+            # outside allowed_devices. Default/absent keeps upstream behaviour
+            # (any device that speaks OTA can receive working credentials).
+            auth_config = self.config["server"].get("auth", {})
+            if should_refuse_unknown_ota_device(auth_config, device_id):
+                status, body, log_msg = unknown_device_ota_payload(device_id)
+                self.logger.bind(tag=TAG).warning(log_msg)
+                response = web.Response(
+                    text=json.dumps(body, separators=(",", ":")),
+                    content_type="application/json",
+                    status=status,
+                )
+                return response
 
             data_json = {}
             try:

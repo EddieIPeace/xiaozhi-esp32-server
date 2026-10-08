@@ -13,6 +13,8 @@ on:
 jobs:
   release:
     name: Release Docker images
+    # Eddie fork: do not publish server_latest/web_latest from this repository.
+    if: github.repository == 'xinnan-tech/xiaozhi-esp32-server'
     runs-on: ubuntu-latest
     permissions:
       packages: write

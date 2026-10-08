@@ -12,6 +12,8 @@ on:
 jobs:
   build-base:
     name: Build and push server base image
+    # Eddie fork: do not rebuild/push the shared server-base image.
+    if: github.repository == 'xinnan-tech/xiaozhi-esp32-server'
     runs-on: ubuntu-latest
     permissions:
       packages: write
