@@ -439,6 +439,9 @@ ASR:
     type: doubao_stream
     appid: 你的火山引擎语音合成服务appid
     access_token: 你的火山引擎语音合成服务access_token
+    # [Eddie fork] 新版语音控制台只发一张 API Key：填 api_key，appid/access_token 可留空。
+    # 旧版控制台继续填 appid + access_token，本项保持空。真实 Key 只写 data/.config.yaml。
+    api_key: ""
     # 资源ID：小时版 volc.seedasr.sauc.duration，并发版 volc.seedasr.sauc.concurrent
     resource_id: volc.seedasr.sauc.duration
     # 热词、替换词使用流程：https://www.volcengine.com/docs/6561/155738

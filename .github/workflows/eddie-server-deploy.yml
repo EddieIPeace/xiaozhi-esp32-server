@@ -25,7 +25,7 @@ env:
 
 jobs:
   test-ota-allowlist:
-    name: OTA allowlist tests
+    name: Eddie-fork unit tests
     if: github.repository == 'EddieIPeace/xiaozhi-esp32-server'
     runs-on: ubuntu-latest
     defaults:
@@ -43,8 +43,8 @@ jobs:
       - name: Install test deps
         run: pip install pytest
 
-      - name: Run allowlist tests
-        run: pytest -c /dev/null --noconftest -o cache_dir=/tmp/pytest-eddie tests/test_ota_allowlist.py -q
+      - name: Run eddie-fork tests
+        run: pytest -c /dev/null --noconftest -o cache_dir=/tmp/pytest-eddie tests/test_ota_allowlist.py tests/test_doubao_stream_auth.py -q
 
   build:
     name: Build and push server image

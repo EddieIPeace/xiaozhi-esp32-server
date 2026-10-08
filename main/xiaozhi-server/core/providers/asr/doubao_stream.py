@@ -6,6 +6,13 @@ import websockets
 from core.providers.asr.base import ASRProviderBase
 from config.logger import setup_logging
 from core.providers.asr.dto.dto import InterfaceType
+# Eddie-fork: new-console X-Api-Key + credential-safe logs. See doubao_stream_auth.py.
+from core.providers.asr.doubao_stream_auth import (
+    build_ws_auth_headers,
+    omit_app_section_if_api_key,
+    redact_headers_for_log,
+    redact_request_for_log,
+)
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -76,7 +83,9 @@ class ASRProvider(ASRProviderBase):
                 self.is_processing = True
                 # 建立新的WebSocket连接
                 headers = self.token_auth() if self.auth_method == "token" else None
-                logger.bind(tag=TAG).info(f"正在连接ASR服务，headers: {headers}")
+                logger.bind(tag=TAG).info(
+                    f"正在连接ASR服务，headers: {redact_headers_for_log(headers)}"
+                )
 
                 self.asr_ws = await websockets.connect(
                     self.ws_url,
@@ -96,7 +105,9 @@ class ASRProvider(ASRProviderBase):
                     full_client_request.extend((len(payload_bytes)).to_bytes(4, "big"))
                     full_client_request.extend(payload_bytes)
 
-                    logger.bind(tag=TAG).info(f"发送初始化请求: {request_params}")
+                    logger.bind(tag=TAG).info(
+                        f"发送初始化请求: {redact_request_for_log(request_params)}"
+                    )
                     await self.asr_ws.send(full_client_request)
 
                     # 等待初始化响应
@@ -310,22 +321,27 @@ class ASRProvider(ASRProviderBase):
             },
         }
 
+        # Eddie-fork: v3 API Key auth omits app.appid/token (do not send empty appid).
+        omit_app_section_if_api_key(req, self.config)
+
         # language参数仅在多语种模式下添加
         if self.enable_multilingual and self.language:
             req["audio"]["language"] = self.language
 
         logger.bind(tag=TAG).debug(
-            f"构造请求参数: {json.dumps(req, ensure_ascii=False)}"
+            f"构造请求参数: {json.dumps(redact_request_for_log(req), ensure_ascii=False)}"
         )
         return req
 
     def token_auth(self):
-        return {
-            "X-Api-App-Key": self.appid,
-            "X-Api-Access-Key": self.access_token,
-            "X-Api-Resource-Id": self.resource_id,
-            "X-Api-Connect-Id": str(uuid.uuid4()),
-        }
+        # Eddie-fork: X-Api-Key when api_key is set; else upstream App-Key/Access-Key.
+        return build_ws_auth_headers(
+            self.config,
+            appid=self.appid,
+            access_token=self.access_token,
+            resource_id=self.resource_id,
+            connect_id=str(uuid.uuid4()),
+        )
 
     def generate_header(
         self,
