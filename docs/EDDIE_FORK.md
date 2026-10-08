@@ -103,6 +103,25 @@ curl -sS -D- \
 
 开关未打开时，陌生人 POST 仍会 200 并带 token（上游行为）。
 
+## 豆包流式 ASR 新控制台 API Key
+
+上游 `doubao_stream`（`ASR.DoubaoStreamASRV2`）只用旧控制台的 `X-Api-App-Key` / `X-Api-Access-Key`。新版语音控制台只发一张 API Key，握手头必须是 `X-Api-Key`（另加 `X-Api-Resource-Id`、`X-Api-Connect-Id`）。
+
+- **配置键：** `ASR.DoubaoStreamASRV2.api_key`（可选）
+- **非空且不是「你的…」占位符：** 走 `X-Api-Key`，请求体不再带 `app.appid` / `app.token`
+- **缺省 / 空：** 与上游一致（`appid` + `access_token`）
+- 连接日志会脱敏 `X-Api-Key` / `X-Api-Access-Key` / `token`，避免密钥进日志
+
+真实 Key 只写主机 `data/.config.yaml`，不要提交到仓库：
+
+```yaml
+ASR:
+  DoubaoStreamASRV2:
+    type: doubao_stream
+    api_key: 你的火山引擎新控制台API Key
+    resource_id: volc.seedasr.sauc.duration
+```
+
 ## CI/CD
 
 工作流：`.github/workflows/eddie-server-deploy.yml`
@@ -153,10 +172,11 @@ cd /home/ubuntu/xiaozhi-server
 docker compose up -d
 ```
 
-## 本地跑白名单测试
+## 本地跑 fork 测试
 
 ```bash
 cd main/xiaozhi-server
 pip install pytest
-pytest -c /dev/null --noconftest -o cache_dir=/tmp/pytest-eddie tests/test_ota_allowlist.py -q
+pytest -c /dev/null --noconftest -o cache_dir=/tmp/pytest-eddie \
+  tests/test_ota_allowlist.py tests/test_doubao_stream_auth.py -q
 ```
